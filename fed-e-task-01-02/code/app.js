@@ -178,10 +178,203 @@
 
 
 // Point Free
-const fp = require('lodash/fp')
+// const fp = require('lodash/fp')
 // const f = fp.flowRight(fp.replace(/\s+/g, '_'), fp.toLower)
 // console.log(f('Hello     World'))
 
 // const firstLetterToUpper = fp.flowRight(fp.join('. '), fp.map(fp.first), fp.map(fp.toUpper), fp.split(' '))
-const firstLetterToUpper = fp.flowRight(fp.join('. '), fp.map(fp.flowRight(fp.first, fp.toUpper)), fp.split(' '))
-console.log(firstLetterToUpper('world wild web'))
+// const firstLetterToUpper = fp.flowRight(fp.join('. '), fp.map(fp.flowRight(fp.first, fp.toUpper)), fp.split(' '))
+// console.log(firstLetterToUpper('world wild web'))
+
+// 函子
+// class Container {
+//     static of(value) {
+//         return new Container(value)
+//     }
+//     constructor(value) {
+//         this._value = value
+//     }
+//     map(fn) {
+//         return Container.of(fn(this._value))
+//     }
+// }
+// let r = new Container(5)
+//     .map(x => x + 1)
+//     .map(x => x * x)
+// console.log(r)
+
+// let r1 = Container.of(5)
+//     .map(x => x + 2)
+//     .map(x => x * x)
+// console.log(r1)
+
+// let r = Container.of(null)
+//     .map(x => x.toUpperCase())
+
+
+// MayBe 函子
+// class MayBe {
+//     constructor(value) {
+//         this._value = value
+//     }
+
+//     static of(value) {
+//         return new MayBe(value)
+//     }
+
+//     map(fn) {
+//         return this.isNothing() ? MayBe.of(null) : MayBe.of(fn(this._value))
+//     }
+
+//     isNothing() {
+//         return this._value === null || this._value === undefined
+//     }
+// }
+// let r = MayBe.of('Hello World')
+//     .map(x => x.toUpperCase())
+// let r = MayBe.of(null)
+//     .map(x => x.toUpperCase())
+// let r = MayBe.of('Hello World')
+//     .map(x => x.toUpperCase())
+//     .map(x => null)
+//     .map(x => x.split(' '))
+// console.log(r)
+
+
+// Either函子
+// class Left {
+//     constructor(value) {
+//         this._value = value
+//     }
+
+//     static of(value) {
+//         return new Left(value)
+//     }
+
+//     map(fn) {
+//         return this
+//     }
+// }
+
+// class Right {
+//     constructor(value) {
+//         this._value = value
+//     }
+
+//     static of(value) {
+//         return new Right(value)
+//     }
+
+//     map(fn) {
+//         return Right.of(fn(this._value))
+//     }
+// }
+
+// // let r1 = Right.of(12).map(x => x + 2)
+// // let r2 = Left.of(12).map(x => x + 2)
+// // console.log(r1)
+// // console.log(r2)
+
+// function parseJSON(str) {
+//     try {
+//         return Right.of(JSON.parse(str))
+//     } catch(e) {
+//         return Left.of({error: e.message})
+//     }
+// }
+// // let r = parseJSON('{name: zhangsan}')
+// let r = parseJSON('{"name": "zhangsan"}')
+//             .map(x => x.name.toUpperCase())
+// console.log(r)
+
+
+
+// IO函子
+// const fp = require('lodash/fp')
+// class IO {
+//     constructor(fn) {
+//         this._value = fn
+//     }
+
+//     static of(value) {
+//         return new IO(function() {
+//             return value
+//         })
+//     }
+
+//     map(fn) {
+//         return new IO(fp.flowRight(fn, this._value))
+//     }
+// }
+// let r = IO.of(process).map(p => p.execPath)
+// console.log(r._value())
+
+// Task函子
+// const fs = require('fs')
+// const { task } = require('folktale/concurrency/task')
+// const { split, find } = require('lodash/fp')
+// function readFile(filename) {
+//     return task(resolver => {
+//         fs.readFile(filename, 'utf-8', (err, data) => {
+//             if(err) resolver.reject(err)
+//             resolver.resolve(data)
+//         })
+//     })
+// }
+// readFile('package.json')
+//     .map(split('\n'))
+//     .map(find(x => x.includes('nodemon')))
+//     .run()
+//     .listen({
+//         onRejected: err => {
+//             console.log(err)
+//         },
+//         onResolved: value => {
+//             console.log(value)
+//         }
+//     })
+
+// IO Monad函子
+const fs = require('fs')
+const fp = require('lodash/fp')
+
+class IO {
+    constructor(fn) {
+        this._value = fn
+    }
+
+    static of(value) {
+        return new IO(function() {
+            return value
+        })
+    }
+
+    map(fn) {
+        return new IO(fp.flowRight(fn, this._value))
+    }
+
+    join() {
+        return this._value()
+    }
+
+    flatMap(fn) {
+        return this.map(fn).join()
+    }
+}
+
+let readFile = function(filename) {
+    return new IO(function() {
+        return fs.readFileSync(filename, 'utf-8')
+    })
+}
+let print = function(x) {
+    return new IO(function() {
+        return x
+    })
+}
+let r = readFile('package.json')
+            // .map(x => x.toUpperCase())
+            // .map(fp.toUpper)
+            .flatMap(print)
+            .join()
+console.log(r)
