@@ -167,11 +167,21 @@
 //         }, value)
 //     }
 // }
-const compose = (...args) => value => args.reverse().reduce((acc, fn) => fn(acc), value)
+// const compose = (...args) => value => args.reverse().reduce((acc, fn) => fn(acc), value)
 
-const reverse = arr => arr.reverse()
-const first = arr => arr[0]
-const toUpper = s => s.toUpperCase()
+// const reverse = arr => arr.reverse()
+// const first = arr => arr[0]
+// const toUpper = s => s.toUpperCase()
 
-const f = compose(toUpper, first, reverse)
-console.log(f(['one', 'two', 'three']))
+// const f = compose(toUpper, first, reverse)
+// console.log(f(['one', 'two', 'three']))
+
+
+// Point Free
+const fp = require('lodash/fp')
+// const f = fp.flowRight(fp.replace(/\s+/g, '_'), fp.toLower)
+// console.log(f('Hello     World'))
+
+// const firstLetterToUpper = fp.flowRight(fp.join('. '), fp.map(fp.first), fp.map(fp.toUpper), fp.split(' '))
+const firstLetterToUpper = fp.flowRight(fp.join('. '), fp.map(fp.flowRight(fp.first, fp.toUpper)), fp.split(' '))
+console.log(firstLetterToUpper('world wild web'))
