@@ -467,3 +467,12 @@ module.exports = grunt => {
 }
 ```
 
+
+
+### gulp和grunt配置文件代码
+
+```
+github: https://github.com/tbColdQQ/pages-boilerplate.git
+gitee: https://gitee.com/tbCold/pages-boilerplate.git
+```
+
