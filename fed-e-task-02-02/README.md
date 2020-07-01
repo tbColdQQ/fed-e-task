@@ -3,7 +3,22 @@
 ### 1、Webpack 的构建流程主要有哪些环节？如果可以请尽可能详尽的描述 Webpack 打包的整个过程。
 
 ```
+构建流程：
+0、mode：指定webpack以development的默认配置还是production的默认配置进行打包
+1、entry：指定webpack的入口文件
+2、module：指定项目中所需要的的加载器，按照配置处理不同模块
+3、plugins：辅助webpack实现loader无法实现的功能，如在打包前清空打包目录等
+4、output：指定webpack的输出
+5、devtools：指定sourceMap的生成方式
+6、resolve：指定模块的解析方式，如引用的文件路径的简写等
+7、module.hot：HMR配置，即模块热替换
 
+1、找到打包入口文件
+2、根据文件中的import或require解析并推断依赖的模块，生成依赖树
+3、递归遍历依赖树，根据配置文件中的rules属性找到模块对应的loader
+4、将相关的代码交给loader处理
+5、在整个打包过程中，执行在预先设定好的webpack生命周期的钩子中相对应的插件
+6、处理后的代码放到输出的文件中
 ```
 
 
