@@ -90,30 +90,44 @@ class MyPlugin {
 **webpack.common.js**
 
 ```javascript
-// webpack.common.js
+/* eslint-disable */
 const path = require('path')
 const { dirname } = require('path')
+const VueLoaderPlugin = require('vue-loader/lib/plugin')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
-module.export = {
+const templateParameters = {
+    BASE_URL: 'http://www.baidu.com/'
+}
+
+module.exports = {
     entry: { // 配置多个入口
         main: './src/main.js',
         demo: './src/main.js'
     },
     output: {
         // 输出的文件名
-        filename: '[name].bundle.[chunkhash:8].js',
+        filename: 'js/[name].bundle.[chunkhash:8].js',
         // 输出的文件目录（绝对地址）
         path: path.resolve(__dirname, 'dist'),
         // 网站根目录
-        publicPath: '/'
+        publicPath: ''
     },
-    devtools: '',
+    // devtools: '',
     module: {
         rules: [
             {
+                test: /.css$/,
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    'css-loader'
+                ]
+            },
+            {
                 test: /.less$/,
                 use: [
-                    'style-loader'
+                    'style-loader',
                     'css-loader',
                     'less-loader'
                 ]
@@ -124,29 +138,177 @@ module.export = {
                     {
                         loader: 'url-loader',
                         options: {
+                            esModule: false,    // file-loader 的配置
                             limit: 8 * 1024,
-                            name: '[name].[ext]'
+                            name: '[name].[ext]',
+                            outputPath: 'assets/'   // file-loader 的配置
                         }
                     }
                 ]
             },
             {
+                test: '/.js$/',
+                loader: 'babel-loader',
+                options: {
+                    presets: ['@babel/preset-env']
+                }
+            },
+            {
                 test: /.vue$/,
-                use: 'vue-loader'
+                use: 'vue-loader',
+                exclude: file => (
+                    /node_modules/.test(file) &&
+                    !/\.vue\.js/.test(file)
+                )
             }
         ]
     },
     plugins: [
-
-    ],
+        new VueLoaderPlugin(),
+        new MiniCssExtractPlugin({
+            filename: 'css/style.css'
+        }),
+        new HtmlWebpackPlugin({
+            template: 'public/index.html',
+            filename: 'index.html',
+            chunks: ['main'],
+            title: 'index',
+            templateParameters
+        }),
+        new HtmlWebpackPlugin({
+            template: 'public/index.html',
+            filename: 'demo.html',
+            chunks: ['demo'],
+            title: 'demo',
+            templateParameters
+        }),
+    ]
 
 }
 ```
 
 **webpack.prod.js**
 
-```
+```javascript
+/* eslint-disable */
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
+const merge = require('webpack-merge')
+
+let config = require('./webpack.common')
+const newConfig = {
+    mode: 'production',
+    plugins: [
+        new CleanWebpackPlugin(),
+        new CopyWebpackPlugin({patterns: ['public']})
+    ]
+}
+
+module.exports = merge(config, newConfig)
+```
+
+**webpack.dev.js**
+
+```javascript
+/* eslint-disable */
+const merge = require('webpack-merge')
+const path = require('path')
+let config = require('./webpack.common')
+config = merge(config, {
+    mode: 'development',
+    devtool: 'cheap-module-eval-source-map',
+    devServer: {
+        contentBase: path.resolve(__dirname, 'public'),
+        port: 8888,
+        overlay: {
+            warnings: true,
+            errors: true
+        },
+        proxy: {
+            '/api': {
+                target: 'https://api.github.com',
+                changeOrigin: true,
+                pathRewrite: {
+                    '^/api': ''
+                }
+            }
+        }
+    }, 
+    module: {
+        rules: [
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                loader: 'eslint-loader',
+                enforce: 'pre',
+                options: {
+                    formatter: require('eslint-friendly-formatter'), // 指定错误报告的格式规范
+                    emitWarning: false // true：在命令行和控制台输出警告，不会使得编译失败 | false：会强制 eslint-loader 将 lint 错误输出为编译错误，同时也意味着 lint 错误将会导致编译失败
+                }
+            },
+            {
+                test: /\.vue$/,
+                exclude: /node_modules/,
+                loader: 'eslint-loader',
+                enforce: 'pre',
+                options: {
+                    formatter: require('eslint-friendly-formatter'), // 指定错误报告的格式规范
+                    emitWarning: false // true：在命令行和控制台输出警告，不会使得编译失败 | false：会强制 eslint-loader 将 lint 错误输出为编译错误，同时也意味着 lint 错误将会导致编译失败
+                }
+            }
+        ]
+    }
+})
+module.exports = config
+```
+
+**webpack.config.js**
+
+```javascript
+/* eslint-disable */
+
+const prodConfig = require('./webpack.prod')
+const config = require('./webpack.dev')
+
+module.exports = (env, argsv) => {
+    if(env === 'production') {
+        return { ...prodConfig }
+    }else {
+        return { ...config }
+    }
+}
+```
+
+**.eslintrc.js**
+
+```javascript
+/* eslint-disable */
+/*
+ * @Descripttion: 
+ * @version: 
+ * @Author: jie.niu
+ * @Date: 2020-07-02 10:09:52
+ * @LastEditors: jie.niu
+ * @LastEditTime: 2020-07-02 15:22:55
+ */ 
+module.exports = {
+  env: {
+    browser: true,
+    es2020: true
+  },
+  extends: [
+    'plugin:vue/essential',
+    'standard'
+  ],
+  parserOptions: {
+    ecmaVersion: 11,
+  },
+  plugins: [
+    'vue'
+  ],
+  rules: {
+    
+  }
+}
 ```
 
