@@ -10,7 +10,7 @@
     "@gridsome/source-strapi": "^0.2.0",
     "element-ui": "^2.14.1",
     "gridsome": "^0.7.0",
-    "markdown-it": "^12.0.4"
+    "markdown-it": "^12.3.2"
   },
   "devDependencies": {
     "axios": "^0.21.1"
